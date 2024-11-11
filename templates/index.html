@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Price Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .price {
+            font-size: 1.5em;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Crypto Price Checker</h1>
+    <div id="bitcoin" class="price">Bitcoin Price: Loading...</div>
+    <div id="ethereum" class="price">Ethereum Price: Loading...</div>
+
+    <script>
+        // Function to fetch and display prices
+        async function fetchCryptoPrices() {
+            try {
+                const response = await fetch('/crypto-prices');
+                const data = await response.json();
+
+                document.getElementById('bitcoin').textContent = 
+                    `Bitcoin Price: $${data.Bitcoin.price_usd.toLocaleString()}`;
+
+                document.getElementById('ethereum').textContent = 
+                    `Ethereum Price: $${data.Ethereum.price_usd.toLocaleString()}`;
+            } catch (error) {
+                document.getElementById('bitcoin').textContent = "Error fetching Bitcoin price.";
+                document.getElementById('ethereum').textContent = "Error fetching Ethereum price.";
+                console.error("Error:", error);
+            }
+        }
+
+        // Fetch prices when the page loads
+        fetchCryptoPrices();
+
+        // Optional: Refresh prices every 60 seconds
+        setInterval(fetchCryptoPrices, 60000);
+    </script>
+</body>
+</html>
