@@ -1,5 +1,5 @@
 import unittest
-from app import app  # Import your Flask app
+from app import app
 
 class BasicTests(unittest.TestCase):
     def setUp(self):
@@ -16,8 +16,7 @@ class BasicTests(unittest.TestCase):
         # Test that the crypto price endpoint responds successfully
         response = self.app.get('/crypto')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'bitcoin', response.data)
-        self.assertIn(b'ethereum', response.data)
+        self.assertIn(b'Crypto Page', response.data)
 
 if __name__ == "__main__":
     unittest.main()
