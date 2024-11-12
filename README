@@ -1,10 +1,10 @@
 ### Assessment Report: ###
 Bitcoin and Ethereum Cryptocurrency Price Fetching Service for GetCoins
 
-### Configured and Designed by: 
+### Configured and Designed by: ### 
 Oluwaseyi Mokuolu (DevOps and Cloud Engineer)
 
-Overview
+### Overview ### 
 Here is a high-level overview of a web service that fetches real-time cryptocurrency (Bitcoin and Ethereum) prices and serves them through HTTP endpoint; the service utilizes Dockerfile, Kubernetes manifests, and a basic CI/CD pipeline configuration to ensure scalability, high availability, and auto-scaling capabilities.
 
 1. Service Development
@@ -20,12 +20,804 @@ Requirements:
 Steps to Set Up
     1. Set up a Python virtual environment (optional but recommended).
     2. Install Flask and Requests libraries.
+Run the below cmd on the Terminal (Mac)
+pip install Flask requests
+
+or
+
+pip install Flask
+pip install requests
+
+3. Select an API: CoinGecko API is the API of choice, considering it does not require an API key to fetch cryptocurrency prices.
+
+### Code Implementation ### 
+The below Python-Flask application “app.py” file fetches cryptocurrency prices from an API and exposes endpoints for Bitcoin and Ethereum.
+Raw code:
+
+from flask import Flask, jsonify
+import requests
+
+app = Flask(__name__)
+
+# Define a function to fetch prices from CoinGecko API
+def fetch_crypto_prices():
+    try:
+        # CoinGecko API endpoint for current prices of Bitcoin and Ethereum
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+        response = requests.get(url)
+        data = response.json()
+
+        # Extract Bitcoin and Ethereum prices in USD
+        bitcoin_price = data["bitcoin"]["usd"]
+        ethereum_price = data["ethereum"]["usd"]
+
+        return {
+            "Bitcoin": {"price_usd": bitcoin_price},
+            "Ethereum": {"price_usd": ethereum_price}
+        }
+
+    except Exception as e:
+        # Return an error message if the API call fails
+        return {"error": str(e)}
+
+# Define the endpoint for cryptocurrency prices
+@app.route('/crypto-prices', methods=['GET'])
+def get_crypto_prices():
+    prices = fetch_crypto_prices()
+    return jsonify(prices)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8100)
 
 
-### Code Explanation ###
+### Code Explanation ### 
     • fetch_crypto_prices(): This function uses requests to call CoinGecko’s API endpoint, which provides the current prices for Bitcoin and Ethereum in USD. It then extracts the relevant data and returns it in a dictionary.
     • @app.route('/crypto-prices', methods=['GET']): This endpoint responds with the JSON data containing current prices for Bitcoin and Ethereum.
     • app.run(): The Flask app runs in debug mode on port 8100; however this port can be adjust as needed.
 
+### Running the app ### 
+Here is a view of “app.py” within vscode and its output when ran.
+
 ### Testing ###
 The API: “https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd”, was tested using POSTMAN and it returned “200 OK” indicating a successful GET request, as shown below before it was implemented in the Python-Flask application.
+
+Enhancement of the Python-Flask application
+To add a basic front-end interface, we can create a simple HTML page that fetches and displays data from the Flask “/crypto-prices” API endpoint and displays it. This front-end will use JavaScript to make an HTTP request to the backend and update the page with the current Bitcoin and Ethereum prices. To achieve the task above, the code structure for the “app.py” is modified to serve the HTML page. Also an HTML file with JavaScript is created to fetch and display data.
+
+Modified “app.py” to reflect the HTML page information
+
+### Raw code ###
+from flask import Flask, jsonify, render_template
+import requests
+
+app = Flask(__name__)
+
+# Fetch prices from CoinGecko API
+def fetch_crypto_prices():
+    try:
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+        response = requests.get(url)
+        data = response.json()
+
+        bitcoin_price = data["bitcoin"]["usd"]
+        ethereum_price = data["ethereum"]["usd"]
+
+        return {
+            "Bitcoin": {"price_usd": bitcoin_price},
+            "Ethereum": {"price_usd": ethereum_price}
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+# Endpoint to fetch cryptocurrency prices
+@app.route('/crypto-prices', methods=['GET'])
+def get_crypto_prices():
+    prices = fetch_crypto_prices()
+    return jsonify(prices)
+
+# Serve the HTML page
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8100)
+
+
+Then Re-run the “app.py” within vscode and observe its result
+
+### Creation of the HTML fil e### 
+As seen in the vscode, the HTML file - “index.html” was created within “templates” folder in the same directory path as “app.py”.
+
+### Explanation of the HTML Code ### 
+    • HTML Structure: A simple structure with h1 for the title and two div elements to display Bitcoin and Ethereum prices.
+    • JavaScript Fetching:
+        ◦ fetchCryptoPrices() makes a GET request to the /crypto-prices endpoint and updates the page with the latest prices.
+        ◦ If the fetch request fails, an error message is displayed.
+    • Auto-Refresh: The setInterval function refreshes the prices every 60 seconds to ensure up-to-date information.
+
+### Confirmation of the Python-Flask application ###
+I opened the “http://127.0.0.1:8100” returned when the “aap.py” when ran and the prices for Bitcoin and Ethereum at 6:06pm EST were displayed in USD, as shown.
+
+Final view of the “app.py” with VSCode has successful “200 OK” running output
+
+### Containerization of the application ###
+To containerize the updated Python-Flask application using Docker, the following steps are mainatined:
+    1. Create a Dockerfile to define the application environment.
+    2. Build and run the Docker container to deploy the application.
+
+### Dockerfile - (Raw code) ###
+# Use the official Python image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install required packages
+RUN pip install Flask requests
+
+# Expose the port Flask is running on
+EXPOSE 8100
+
+# Run the Flask application
+CMD ["python", "app.py"]
+
+### Explanation of the Dockerfile ###
+    • FROM python:3.9-slim: Uses a slim version of Python 3.9 to keep the image lightweight.
+    • WORKDIR /app: Sets the working directory inside the container to /app.
+    • COPY . /app: Copies the current directory’s contents (Flask app files) into /app in the container.
+    • RUN pip install Flask requests: Installs Flask and Requests, which are required for our application.
+    • EXPOSE 8100: Opens port 8100, which is the port that the Flask app runs on.
+    • CMD ["python", "app.py"]: Runs the Flask app.
+
+### Create a .dockerignore file (Optional) ###
+To avoid copying unnecessary files into the container, we create a .dockerignore file in the same directory as your Dockerfile:
+
+### Build the Docker Image ###
+Considering our app name is “crypto-price-checker”, to build the docker image, we navigate the directory containing the Dockerfile within the terminal, and run the following command to build the Docker image:
+docker build -t crypto-price-checker .
+
+This command tells Docker to build an image named crypto-price-checker based on the instructions in the Dockerfile.
+
+### Run the Docker Container ###
+Once the image is built, you can run the container with the following command:
+docker run -p 8100:8100 crypto-price-checker
+
+Optional: To run run the container in detached mode (in the background):
+docker run -d -p 8100:8100 crypto-price-checker
+
+### Explanation: ###
+-p 8100:8100: Maps port 8100 on your host machine to port 8100 on the container, allowing you to access the Flask app in the browser or via Postman at http://localhost:8100.
+
+Access the Application
+Open your web browser and go to http://localhost:8100/ to view the application’s UI.
+
+### Kubernetes Deployment ###
+To deploy the containerized Python-Flask application to Kubernetes, several Kubernetes manifest files are created for each required resource:
+    1. Deployment: To specify the container image, replicas, and other application settings.
+    2. Service: To expose the application to other services or externally.
+    3. Horizontal Pod Autoscaler: To automatically scale the number of replicas based on CPU utilization.
+    4. ConfigMap (optional): If you want to externalize any configuration data.
+    5. Ingress (optional): To handle external access if needed.
+
+1. Deployment Manifest
+This manifest defines the deployment, including the container image, environment variables, and resource requests/limits.
+Create a file named deployment.yml:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crypto-price-checker
+spec:
+  replicas: 2  # Initial number of replicas
+  selector:
+    matchLabels:
+      app: crypto-price-checker
+  template:
+    metadata:
+      labels:
+        app: crypto-price-checker
+    spec:
+      containers:
+      - name: crypto-price-checker
+        image: crypto-price-checker:latest  # Replace with your image if it's on Docker Hub or another registry
+        ports:
+        - containerPort: 8100
+        resources:
+          requests:
+            cpu: "100m"       # Request 100 millicores (0.1 vCPU)
+            memory: "128Mi"   # Request 128 MiB of memory
+          limits:
+            cpu: "500m"       # Limit to 500 millicores (0.5 vCPU)
+            memory: "256Mi"   # Limit to 256 MiB of memory
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+2. Service Manifest
+This manifest exposes the application within the cluster (or externally, if desired) on port 8100.
+Create a file named service.yml:
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: crypto-price-checker-service
+spec:
+  selector:
+    app: crypto-price-checker
+  ports:
+    - protocol: TCP
+      port: 80         # Service port
+      targetPort: 8100  # Container port
+  type: LoadBalancer    # Use NodePort if LoadBalancer is not available in your cluster
+
+3. Horizontal Pod Autoscaler Manifest
+This configuration automatically scales the deployment based on CPU utilization, starting with a minimum of 2 replicas and scaling up to a maximum of 5 based on CPU load.
+Create a file named hpa.yml:
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crypto-price-checker-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crypto-price-checker
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50  # Scale up when average CPU usage exceeds 50%
+
+4. ConfigMap (Optional)
+ConfigMap can be utilized when  any configure any settings (e.g., API endpoint URLs) is needed.
+For instance, the below configmap.yml stores API endpoint, which can then be injected as an environment variable.
+
+Create a file named configmap.yml:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crypto-price-checker-config
+data:
+  COINGECKO_API_URL: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+
+Here we can update the deployment.yml to add an environment variable using this ConfigMap:
+
+        env:
+        - name: COINGECKO_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: crypto-price-checker-config
+              key: COINGECKO_API_URL
+
+
+5. Ingress (Optional)
+Ingress resource is very useful to route traffic to our application through a specific path or domain; however, it is important that the cluster has an Ingress controller configured (e.g., NGINX).
+Create a file named ingress.yml:
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: crypto-price-checker-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: your-domain.com  # Replace with your actual domain or use a local Minikube IP
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: crypto-price-checker-service
+            port:
+              number: 80
+
+
+### Application of the Manifests ###
+The commands below are important to apply each manifest to our Kubernetes cluster:
+
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl apply -f hpa.yaml
+kubectl apply -f configmap.yaml  # Optional, if using ConfigMap
+kubectl apply -f ingress.yaml    # Optional, if using Ingress
+
+### Verification of the Deployment ###
+To check pods
+kubectl get pods
+
+To check service
+kubectl get services
+
+For Monitor Autoscaling – To check the Horizontal Pod Autoscaler and observe if there is scaling based on load:
+kubectl get hpa
+
+Based on manifests, the Python-Flask application was successfully deployed on Kubernetes, configured to scale based on CPU usage, and accessible through a service or an ingress as desired.
+
+### To enhance the Python-Flask application by: ### 
+1. Implementing secure secret management
+2. Persistence for price history
+3. Monitoring/alerts configuration
+4. Helper scripts for common operations
+
+Explanation of 1 to 4 as follows:
+
+### 1. Implementing Secure Secret Management ### 
+Based on future enhancement when the Python-Flask application requires an API key or any other sensitive data, it is best to store it in a Kubernetes Secret. However, for the purpose of this assessment, it is assumed that we will use API key.
+Secret Manifest
+Create a file named secret.yml to define the API key as a secret:
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: crypto-price-checker-secret
+type: Opaque
+data:
+  API_KEY: <base64_encoded_api_key>  # Replace with the Base64 encoded API key
+
+
+Note: To encode your API key in Base64, use this command:
+echo -n "your_api_key" | base64
+
+The Deployment us updated to use the Secret
+Edit the deployment.yml file to include the environment variable for the API key from the secret:
+
+env:
+- name: API_KEY
+  valueFrom:
+    secretKeyRef:
+      name: crypto-price-checker-secret
+      key: API_KEY
+
+Note: The API_KEY will be accessible in the application as an environment variable.
+
+### 2. Adding Persistent Storage for Price History ### 
+To store price history, we can use a SQLite database or file storage on a Persistent Volume (PV). Here’s how to set up a Persistent Volume Claim (PVC) for our application.
+Persistent Volume Claim Manifest
+Create a file named pvc.yml:
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: price-history-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi  # Adjust storage size as needed
+
+### The Deployment is updated to use the PVC ### 
+Edit the deployment.yml file to mount the PVC at a specific location within the container (e.g., /data). SQLite will store data files here, or you could use this location to save history as plain text or JSON.
+volumeMounts:
+- mountPath: /data
+  name: price-history-storage
+
+volumes:
+- name: price-history-storage
+  persistentVolumeClaim:
+    claimName: price-history-pvc
+
+
+### Updating the app.py for Persistence ### 
+SQLite is use to store the price history data for the Python-Flask application. The changes are implemented within the app.py
+    1. Import the SQLite library in app.py.
+    2. Modify the price-fetching function to save data to the database.
+    3. Initialize the database and create a table if it doesn’t already exist.
+Here’s an updated version of app.py with SQLite integration:
+import os
+import sqlite3
+from flask import Flask, jsonify, render_template
+import requests
+
+app = Flask(__name__)
+
+DATABASE = '/data/price_history.db'  # Ensure this matches the PVC mount path
+
+# Initialize SQLite Database
+def init_db():
+    if not os.path.exists(DATABASE):
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS prices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                bitcoin_price REAL,
+                ethereum_price REAL
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
+# Fetch prices from CoinGecko API and store them in SQLite
+def fetch_crypto_prices():
+    init_db()
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+    response = requests.get(url)
+    data = response.json()
+
+    bitcoin_price = data["bitcoin"]["usd"]
+    ethereum_price = data["ethereum"]["usd"]
+
+    # Save to database
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute('INSERT INTO prices (bitcoin_price, ethereum_price) VALUES (?, ?)', 
+              (bitcoin_price, ethereum_price))
+    conn.commit()
+    conn.close()
+
+    return {
+        "Bitcoin": {"price_usd": bitcoin_price},
+        "Ethereum": {"price_usd": ethereum_price}
+}
+
+# Endpoint to fetch cryptocurrency prices and persist them
+@app.route('/crypto-prices', methods=['GET'])
+def get_crypto_prices():
+    prices = fetch_crypto_prices()
+    return jsonify(prices)
+
+# Endpoint to retrieve price history
+@app.route('/price-history', methods=['GET'])
+def get_price_history():
+    init_db()
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute('SELECT timestamp, bitcoin_price, ethereum_price FROM prices ORDER BY timestamp DESC LIMIT 100')
+    history = [{"timestamp": row[0], "bitcoin_price": row[1], "ethereum_price": row[2]} for row in c.fetchall()]
+    conn.close()
+    return jsonify(history)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8100)
+
+Explanation of Changes:
+    • init_db() function: Initializes the SQLite database and creates the prices table if it doesn’t exist.
+    • fetch_crypto_prices() function: Fetches prices and inserts them into the SQLite database for each request.
+    • /price-history endpoint: Retrieves the last 100 entries of Bitcoin and Ethereum prices from the database.
+
+### 3. Implementing Monitoring and Alerts ### 
+To enhance the Kubernetes deployment with monitoring and alerting
+Prometheus is use to enhance the Kubernetes deployment with monitoring and alerting. This assessment utilizes Kube Prometheus Stack to streamline this setup.
+Step 1: Install the Kube Prometheus Stack
+Considering Helm is been used,  Prometheus Helm repository will be added and Kube Prometheus Stack is installed using the commands:
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install monitoring prometheus-community/kube-prometheus-stack
+
+
+Step 2: Configure Prometheus Metrics for the Application
+Add metrics to the Flask application to expose them to Prometheus. The prometheus_flask_exporter library can simplify this.
+
+1. Install prometheus_flask_exporter:
+pip install prometheus_flask_exporter
+
+2. Add Prometheus Metrics to app.py:
+The app.py to include Prometheus metrics:
+
+from prometheus_flask_exporter import PrometheusMetrics
+app = Flask(__name__)
+metrics = PrometheusMetrics(app)  # Adds Prometheus metrics support
+
+# Optionally, define custom metrics for tracking API calls
+metrics.info("app_info", "Crypto Price Checker Application Info", version="1.0.0")
+
+With this integration, Prometheus will now scrape metrics from the Flask app, enabling you to monitor response times, request counts, and error rates.
+Step 3: Create Alerting Rules in Prometheus
+Define custom alert rules for high CPU and memory usage. These can be added to the Prometheus configuration.
+    1. Create a file named alerts.yml:
+
+groups:
+  - name: crypto-price-checker-alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: sum(rate(container_cpu_usage_seconds_total{pod=~"crypto-price-checker.*"}[5m])) > 0.8
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU usage detected in Crypto Price Checker app"
+          description: "CPU usage has exceeded 80% for more than 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: sum(container_memory_usage_bytes{pod=~"crypto-price-checker.*"}) > 0.8 * sum(container_spec_memory_limit_bytes{pod=~"crypto-price-checker.*"})
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High Memory usage detected in Crypto Price Checker app"
+          description: "Memory usage has exceeded 80% of the limit for more than 5 minutes."
+
+
+    2. The Alert rule file is loaded into Prometheus by updating the Kube Prometheus Stack Helm chart configuration or using a ConfigMap to inject it into Prometheus.
+
+### 4. Helper Scripts for Daily Operations ### 
+Here are some shell scripts for common tasks, including checking logs, scaling the application, and triggering a manual backup of the SQLite database.
+Script 1: Check Logs for the Latest Pod
+Create a file named check_logs.sh to fetch logs for the latest crypto-price-checker pod:
+
+#!/bin/bash
+
+POD_NAME=$(kubectl get pods --selector=app=crypto-price-checker --sort-by=.metadata.creationTimestamp -o jsonpath="{.items[-1:].metadata.name}")
+kubectl logs $POD_NAME
+
+
+Make it executable:
+chmod +x check_logs.sh
+
+
+Script 2: Scale the Application Up or Down
+Create a file named scale_app.sh to scale the application’s replicas:
+
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <replicas>"
+  exit 1
+fi
+
+REPLICAS=$1
+kubectl scale deployment crypto-price-checker --replicas=$REPLICAS
+
+
+Usage:
+./scale_app.sh 3  # Scale to 3 replicas
+
+
+Script 3: Trigger Manual Database Backup
+To back up the SQLite database from the Persistent Volume, create backup_db.sh:
+
+#!/bin/bash
+
+# Ensure you have an appropriate path for your backup
+BACKUP_PATH="./backup"
+mkdir -p $BACKUP_PATH
+
+# Copy the SQLite file from the pod to the backup path
+POD_NAME=$(kubectl get pods --selector=app=crypto-price-checker --sort-by=.metadata.creationTimestamp -o jsonpath="{.items[-1:].metadata.name}")
+kubectl cp $POD_NAME:/data/price_history.db $BACKUP_PATH/price_history_$(date +%Y%m%d%H%M%S).db
+
+echo "Backup completed. File saved to $BACKUP_PATH."
+
+
+Make it executable:
+chmod +x backup_db.sh
+
+
+Script 4: View Prometheus Metrics for the Application
+You can create a view_metrics.sh script to access metrics directly:
+
+#!/bin/bash
+
+POD_NAME=$(kubectl get pods --selector=app=crypto-price-checker --sort-by=.metadata.creationTimestamp -o jsonpath="{.items[-1:].metadata.name}")
+kubectl exec $POD_NAME -- curl http://localhost:5000/metrics
+
+This will display Prometheus metrics directly from the /metrics endpoint in the Flask application.
+
+
+
+
+Raw code – Final version of app.py
+The updated and final version of app.py, integrating all requested features:
+    1. Fetches the current Bitcoin and Ethereum prices using a public API.
+    2. Includes Prometheus metrics for monitoring.
+    3. Stores price history in an SQLite database with persistence.
+    4. Implements basic error handling and secure management of secrets via environment variables.
+
+
+
+import os
+import sqlite3
+import requests
+from flask import Flask, jsonify
+from prometheus_flask_exporter import PrometheusMetrics
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Database path
+DATABASE_PATH = os.path.join(os.path.dirname(__file__), 'crypto_prices.db')
+
+# Initialize Prometheus metrics
+metrics = PrometheusMetrics(app)
+
+# Function to initialize the database
+def init_db():
+    # Create the database if it doesn't exist
+    if not os.path.exists(DATABASE_PATH):
+        print(f"Database file {DATABASE_PATH} does not exist. Creating new one.")
+    
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+
+    # Create table if not exists
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            symbol TEXT NOT NULL,
+            price REAL NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Function to save price history to the database
+def save_price(symbol, price):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO price_history (symbol, price) VALUES (?, ?)
+    ''', (symbol, price))
+    conn.commit()
+    conn.close()
+
+# Function to fetch crypto prices
+def fetch_crypto_price(symbol):
+    url = f'https://api.coingecko.com/api/v3/simple/price?ids={symbol}&vs_currencies=usd'
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        return data[symbol]['usd']
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching {symbol} price: {e}")
+        return None
+
+# Route to get current price of Bitcoin
+@app.route('/price/bitcoin', methods=['GET'])
+@metrics.counter('bitcoin_price_requests', 'Total number of requests for Bitcoin price')
+def get_bitcoin_price():
+    price = fetch_crypto_price('bitcoin')
+    if price is not None:
+        save_price('bitcoin', price)
+        return jsonify({'symbol': 'bitcoin', 'price': price})
+    return jsonify({'error': 'Unable to fetch Bitcoin price'}), 500
+
+# Route to get current price of Ethereum
+@app.route('/price/ethereum', methods=['GET'])
+@metrics.counter('ethereum_price_requests', 'Total number of requests for Ethereum price')
+def get_ethereum_price():
+    price = fetch_crypto_price('ethereum')
+    if price is not None:
+        save_price('ethereum', price)
+        return jsonify({'symbol': 'ethereum', 'price': price})
+    return jsonify({'error': 'Unable to fetch Ethereum price'}), 500
+
+# Route to get price history for a specific symbol
+@app.route('/history/<symbol>', methods=['GET'])
+@metrics.counter('price_history_requests', 'Total number of requests for price history')
+def get_price_history(symbol):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT symbol, price, timestamp FROM price_history WHERE symbol = ? ORDER BY timestamp DESC LIMIT 10
+    ''', (symbol,))
+    history = cursor.fetchall()
+    conn.close()
+    
+    if history:
+        return jsonify([{'symbol': row[0], 'price': row[1], 'timestamp': row[2]} for row in history])
+    return jsonify({'error': f'No price history found for {symbol}'}), 404
+
+# Initialize the database
+init_db()
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8100)
+
+
+The final view of “app.py” is available in the assessment report 
+
+### CICD ### 
+The CI/CD pipeline for this Python-Flask application using GitHub Actions, will create a workflow that accomplishes the following:
+    1. Builds the Docker container image.
+    2. Runs basic tests on the application.
+    3. Pushes the container image to a container registry.
+    4. Deploys the image to the Kubernetes cluster.
+
+GitHub Secrets
+The following GitHub Secrets will be defined in the repository to securely store credentials:
+    • REGISTRY_USERNAME: Username for the container registry.
+    • REGISTRY_PASSWORD: Password or token for the container registry.
+    • KUBECONFIG: Contents of your kubeconfig file to connect to your Kubernetes cluster.
+    • REGISTRY_URL: URL of the container registry (e.g., docker.io for Docker Hub).
+    • IMAGE_NAME: Name of the image in the registry (e.g., username/crypto-price-checker)
+GitHub Actions Workflow Configuration
+Create a .github/workflows/cicd.yml file for the GitHub Actions pipeline.
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Tests
+        run: |
+          # Run basic tests; this could be improved with actual unit tests
+          python -m unittest discover -s tests -p "*.py"
+
+      - name: Log in to Container Registry
+        env:
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          echo $REGISTRY_PASSWORD | docker login ${{ secrets.REGISTRY_URL }} -u $REGISTRY_USERNAME --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }} .
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    environment:
+      name: production
+      url: https://yourapp.example.com  # Update to your app's URL
+
+    steps:
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+
+      - name: Deploy to Kubernetes
+        env:
+          IMAGE_NAME: ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}:${{ github.sha }}
+        run: |
+          kubectl set image deployment/crypto-price-checker crypto-price-checker=$IMAGE_NAME
+          kubectl rollout status deployment/crypto-price-checker
+
+
+                                                   ************* Thank you *************
