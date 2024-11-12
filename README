@@ -820,4 +820,6 @@ jobs:
           kubectl rollout status deployment/crypto-price-checker
 
 
+
+
                                                    ************* Thank you *************
