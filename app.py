@@ -56,6 +56,14 @@ def fetch_crypto_price(symbol):
         print(f"Error fetching {symbol} price: {e}")
         return None
 
+@app.route('/')
+def home():
+    return "Home Page", 200
+
+@app.route('/crypto')
+def crypto():
+    return "Crypto Page", 200
+
 # Route to get current price of Bitcoin
 @app.route('/price/bitcoin', methods=['GET'])
 @metrics.counter('bitcoin_price_requests', 'Total number of requests for Bitcoin price')
