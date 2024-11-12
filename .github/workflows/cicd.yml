@@ -29,7 +29,7 @@ jobs:
       - name: Run Tests
         run: |
           # Run basic tests; this could be improved with actual unit tests
-          python -m unittest discover -s tests
+          python -m unittest discover -s tests -p "*.py"
 
       - name: Log in to Container Registry
         env:
