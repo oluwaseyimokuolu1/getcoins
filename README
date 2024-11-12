@@ -1,0 +1,31 @@
+### Assessment Report: ###
+Bitcoin and Ethereum Cryptocurrency Price Fetching Service for GetCoins
+
+### Configured and Designed by: 
+Oluwaseyi Mokuolu (DevOps and Cloud Engineer)
+
+Overview
+Here is a high-level overview of a web service that fetches real-time cryptocurrency (Bitcoin and Ethereum) prices and serves them through HTTP endpoint; the service utilizes Dockerfile, Kubernetes manifests, and a basic CI/CD pipeline configuration to ensure scalability, high availability, and auto-scaling capabilities.
+
+1. Service Development
+The technology stack utilized for this assessment includes Python programming language based on its simplicity, versatile, cross-platform nature, and its ability to connects diverse components. In addition to Flask considering it is a lightweight Python-based web framework with minimal dependencies that allow developers to quickly build web applications.
+The functionalities of the Python-Flask application include:
+    • Fetching current prices for Bitcoin and Ethereum from the CoinGecko public cryptocurrency API and exposes the “/crypto-prices” endpoint via HTTP; thereby users can access it.
+    • Error handling and logging mechanisms are implemented to manage API errors, connection timeouts, and other issues.
+
+Requirements:
+    • Flask: For creating the HTTP server.
+    • Requests: For fetching cryptocurrency data from a public API.
+
+Steps to Set Up
+    1. Set up a Python virtual environment (optional but recommended).
+    2. Install Flask and Requests libraries.
+
+
+### Code Explanation ###
+    • fetch_crypto_prices(): This function uses requests to call CoinGecko’s API endpoint, which provides the current prices for Bitcoin and Ethereum in USD. It then extracts the relevant data and returns it in a dictionary.
+    • @app.route('/crypto-prices', methods=['GET']): This endpoint responds with the JSON data containing current prices for Bitcoin and Ethereum.
+    • app.run(): The Flask app runs in debug mode on port 8100; however this port can be adjust as needed.
+
+### Testing ###
+The API: “https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd”, was tested using POSTMAN and it returned “200 OK” indicating a successful GET request, as shown below before it was implemented in the Python-Flask application.
