@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crypto-price-checker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: crypto-price-checker
+  template:
+    metadata:
+      labels:
+        app: crypto-price-checker
+    spec:
+      containers:
+        - name: crypto-price-checker
+          image: your-container-registry/crypto-price-checker:latest
+          ports:
+            - containerPort: 8100
+          env:
+            - name: CRYPTO_API_URL
+              valueFrom:
+                secretKeyRef:
+                  name: crypto-api-secrets
+                  key: apiUrl
+          volumeMounts:
+            - name: price-history-storage
+              mountPath: /data
+      volumes:
+        - name: price-history-storage
+          persistentVolumeClaim:
+            claimName: price-history-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crypto-price-checker-service
+spec:
+  selector:
+    app: crypto-price-checker
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8100
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: crypto-api-secrets
+type: Opaque
+data:
+  apiUrl: <base64_encoded_crypto_api_url>
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crypto-price-checker-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crypto-price-checker
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: price-history-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

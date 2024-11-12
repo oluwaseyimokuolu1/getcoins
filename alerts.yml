@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crypto-price-checker-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: crypto-price-checker.rules
+    rules:
+    - alert: HighCpuUsage
+      expr: sum(rate(container_cpu_usage_seconds_total{namespace="default", pod=~"crypto-price-checker-.*"}[5m])) / sum(machine_cpu_cores) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High CPU usage on crypto-price-checker application"
+        description: "CPU usage is above 80% for more than 5 minutes."
+
+    - alert: HighMemoryUsage
+      expr: sum(container_memory_usage_bytes{namespace="default", pod=~"crypto-price-checker-.*"}) / sum(machine_memory_bytes) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High memory usage on crypto-price-checker application"
+        description: "Memory usage is above 80% for more than 5 minutes."
+
+    - alert: PodDown
+      expr: absent(kube_pod_container_status_ready{namespace="default", pod=~"crypto-price-checker-.*"})
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Crypto-price-checker pod is down"
+        description: "No ready containers found in crypto-price-checker application for more than 2 minutes."
+
+    - alert: HighRequestLatency
+      expr: histogram_quantile(0.9, sum(rate(http_request_duration_seconds_bucket{namespace="default", pod=~"crypto-price-checker-.*"}[5m])) by (le)) > 0.5
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High request latency on crypto-price-checker application"
+        description: "90th percentile latency is greater than 0.5 seconds for more than 5 minutes."

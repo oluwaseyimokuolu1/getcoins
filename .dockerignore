@@ -1,0 +1,41 @@
+# Ignore the Python bytecode files
+*.pyc
+*.pyo
+__pycache__
+
+# Ignore virtual environments
+venv/
+env/
+
+# Ignore Dockerfile itself (optional)
+Dockerfile
+
+# Ignore Kubernetes manifests (optional)
+*.yaml
+
+# Ignore configuration and secrets files (optional)
+*.env
+*.json
+*.yml
+
+# Ignore log files
+*.log
+
+# Ignore Git files
+.git
+.gitignore
+
+# Ignore IDE or editor-specific files
+.vscode/
+.idea/
+
+# Ignore test files and directories (if any)
+tests/
+
+# Ignore package manager files (useful if you don't need them inside the container)
+*.lock
+
+# Ignore any other irrelevant files or directories (e.g., if you use certain build tools)
+build/
+dist/
+*.tar.gz

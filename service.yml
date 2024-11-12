@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: crypto-price-checker-service
+  labels:
+    app: crypto-price-checker
+spec:
+  selector:
+    app: crypto-price-checker
+  ports:
+    - protocol: TCP
+      port: 80             # Service Port - The port your app is exposed on internally
+      targetPort: 8100      # Container Port - The port your app is listening to inside the container (Flask default port)
+  type: LoadBalancer       # Exposes the service externally, Internal access only should replace with NodePort or ClusterIP
