@@ -1,3 +1,3 @@
-Flask==2.2.5
+Flask==2.3.2
 requests==2.31.0
-prometheus_flask_exporter==0.18.1  # or a compatible older version
+prometheus_flask_exporter==0.21.0
